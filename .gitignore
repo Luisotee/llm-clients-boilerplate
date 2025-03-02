@@ -9,7 +9,6 @@ build/
 
 # WhatsApp session files
 auth_info/
-*.json
 
 # IDE
 .idea/
