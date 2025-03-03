@@ -71,7 +71,8 @@ async function connectToWhatsApp() {
 
             try {
               // Process message with AI service
-              const response = await processMessage(conversation, senderJid);
+              const conversationId = `whatsapp_${senderJid}`;
+              const response = await processMessage(conversation, conversationId);
 
               // Reply to the message
               if (jid) {
