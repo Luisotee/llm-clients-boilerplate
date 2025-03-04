@@ -11,6 +11,7 @@ export const config = {
   reactions: {
     enabled: process.env.ENABLE_REACTIONS === "true",
     emojis: {
+      QUEUED: process.env.REACTION_QUEUED || "🔄",
       PROCESSING: process.env.REACTION_PROCESSING || "⏳",
       COMPLETED: process.env.REACTION_COMPLETED || "✅",
       ERROR: process.env.REACTION_ERROR || "❌",

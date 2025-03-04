@@ -6,8 +6,8 @@ import {
 } from "@whiskeysockets/baileys";
 import { Boom } from "@hapi/boom";
 import qrcode from "qrcode-terminal";
-import { processMessage } from "./services/api";
 import { config } from "./config/config";
+import { enqueueMessage, getQueueSize } from "./services/message-queue";
 import * as fs from "fs";
 
 const SESSION_DIR = "./auth_info";
@@ -69,14 +69,21 @@ async function connectToWhatsApp() {
             msg.message.conversation || msg.message.extendedTextMessage?.text || "";
 
           if (conversation) {
-            const jid = msg.key.remoteJid;
+            const jid = msg.key.remoteJid || null; // Ensure jid is string | null, not undefined
             const senderJid = msg.key.participant || jid || "";
 
-            console.log(`New message from ${senderJid}: ${conversation}`);
+            // Use senderJid as the unique identifier for the user
+            const userId = senderJid;
+
+            console.log(`New message from ${userId}: ${conversation}`);
 
             try {
-              // Add "processing" reaction if enabled
-              if (jid && REACTIONS_ENABLED) {
+              // Check if this message will be queued (not processed immediately)
+              const queueSize = getQueueSize(userId);
+
+              // If this is the first message or the queue is empty,
+              // show processing reaction immediately
+              if (queueSize === 0 && jid && REACTIONS_ENABLED) {
                 await sock.sendMessage(jid, {
                   react: {
                     text: REACTIONS.PROCESSING,
@@ -84,10 +91,18 @@ async function connectToWhatsApp() {
                   },
                 });
               }
+              // For queued messages, the reaction will be set in enqueueMessage
 
-              // Process message with AI service
-              const conversationId = `whatsapp_${senderJid}`;
-              const response = await processMessage(conversation, conversationId);
+              // Add to queue and process
+              const conversationId = `whatsapp_${userId}`;
+              const response = await enqueueMessage(
+                userId,
+                conversation,
+                conversationId,
+                msg.key,
+                jid, // Now jid is definitely string | null
+                sock
+              );
 
               // Change reaction to "completed" if enabled
               if (jid) {
