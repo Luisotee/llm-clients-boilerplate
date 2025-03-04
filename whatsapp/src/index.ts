@@ -115,8 +115,12 @@ async function connectToWhatsApp() {
                   });
                 }
 
-                // Reply to the message
-                await sock.sendMessage(jid, { text: response });
+                // Reply to the message with quoting (as third parameter)
+                await sock.sendMessage(
+                  jid,
+                  { text: response },
+                  { quoted: msg } // The quoting is now correctly in the options parameter
+                );
               }
             } catch (error) {
               console.error("Error processing message:", error);
@@ -132,9 +136,12 @@ async function connectToWhatsApp() {
                   });
                 }
 
-                await sock.sendMessage(jid, {
-                  text: "I'm sorry, I couldn't process your message at the moment.",
-                });
+                // Error reply also quotes the original message
+                await sock.sendMessage(
+                  jid,
+                  { text: "I'm sorry, I couldn't process your message at the moment." },
+                  { quoted: msg } // The quoting is now correctly in the options parameter
+                );
               }
             }
           }
