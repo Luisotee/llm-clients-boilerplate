@@ -2,6 +2,7 @@ import {
   default as makeWASocket,
   DisconnectReason,
   useMultiFileAuthState,
+  proto,
 } from "@whiskeysockets/baileys";
 import { Boom } from "@hapi/boom";
 import qrcode from "qrcode-terminal";
@@ -15,6 +16,10 @@ const SESSION_DIR = "./auth_info";
 if (!fs.existsSync(SESSION_DIR)) {
   fs.mkdirSync(SESSION_DIR, { recursive: true });
 }
+
+// Get reaction settings from config
+const REACTIONS_ENABLED = config.reactions.enabled;
+const REACTIONS = config.reactions.emojis;
 
 async function connectToWhatsApp() {
   const { state, saveCreds } = await useMultiFileAuthState(SESSION_DIR);
@@ -70,17 +75,48 @@ async function connectToWhatsApp() {
             console.log(`New message from ${senderJid}: ${conversation}`);
 
             try {
+              // Add "processing" reaction if enabled
+              if (jid && REACTIONS_ENABLED) {
+                await sock.sendMessage(jid, {
+                  react: {
+                    text: REACTIONS.PROCESSING,
+                    key: msg.key,
+                  },
+                });
+              }
+
               // Process message with AI service
               const conversationId = `whatsapp_${senderJid}`;
               const response = await processMessage(conversation, conversationId);
 
-              // Reply to the message
+              // Change reaction to "completed" if enabled
               if (jid) {
+                if (REACTIONS_ENABLED) {
+                  await sock.sendMessage(jid, {
+                    react: {
+                      text: REACTIONS.COMPLETED,
+                      key: msg.key,
+                    },
+                  });
+                }
+
+                // Reply to the message
                 await sock.sendMessage(jid, { text: response });
               }
             } catch (error) {
               console.error("Error processing message:", error);
+
+              // Change reaction to "error" if enabled
               if (jid) {
+                if (REACTIONS_ENABLED) {
+                  await sock.sendMessage(jid, {
+                    react: {
+                      text: REACTIONS.ERROR,
+                      key: msg.key,
+                    },
+                  });
+                }
+
                 await sock.sendMessage(jid, {
                   text: "I'm sorry, I couldn't process your message at the moment.",
                 });
