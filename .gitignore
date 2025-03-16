@@ -5,7 +5,6 @@ build/
 
 # Environment
 .env
-.env.*
 
 # WhatsApp session files
 auth_info/
