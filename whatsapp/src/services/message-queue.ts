@@ -44,7 +44,6 @@ export async function enqueueMessage(
 
   // Show QUEUED if the queue is being processed OR has existing messages
   if ((isProcessing || existingQueueLength > 0) && jid && REACTIONS_ENABLED) {
-    console.log(`Showing QUEUED reaction for ${userId}`);
     await sock.sendMessage(jid, {
       react: {
         text: REACTIONS.QUEUED,

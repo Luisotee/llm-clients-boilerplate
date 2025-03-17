@@ -41,21 +41,29 @@ async function startWhatsAppClient() {
               try {
                 // Check if this message will be queued (not processed immediately)
                 const queueSize = getQueueSize(userId);
+                console.log(`Queue size for ${userId}: ${queueSize}`);
 
                 // If this is the first message or the queue is empty,
                 // show processing reaction immediately
                 if (queueSize === 0 && jid && REACTIONS_ENABLED) {
-                  await sock.sendMessage(jid, {
-                    react: {
-                      text: REACTIONS.PROCESSING,
-                      key: msg.key,
-                    },
-                  });
+                  try {
+                    await sock.sendMessage(jid, {
+                      react: {
+                        text: REACTIONS.PROCESSING,
+                        key: msg.key,
+                      },
+                    });
+                  } catch (reactionError) {
+                    console.error("Error sending processing reaction:", reactionError);
+                  }
                 }
                 // For queued messages, the reaction will be set in enqueueMessage
 
                 // Add to queue and process
-                const conversationId = `whatsapp_${userId}`;
+                const conversationId = `whatsapp_${userId.replace(
+                  "@s.whatsapp.net",
+                  ""
+                )}`;
                 const response = await enqueueMessage(
                   userId,
                   conversation,
@@ -68,12 +76,16 @@ async function startWhatsAppClient() {
                 // Change reaction to "completed" if enabled
                 if (jid) {
                   if (REACTIONS_ENABLED) {
-                    await sock.sendMessage(jid, {
-                      react: {
-                        text: REACTIONS.COMPLETED,
-                        key: msg.key,
-                      },
-                    });
+                    try {
+                      await sock.sendMessage(jid, {
+                        react: {
+                          text: REACTIONS.COMPLETED,
+                          key: msg.key,
+                        },
+                      });
+                    } catch (reactionError) {
+                      console.error("Error sending completed reaction:", reactionError);
+                    }
                   }
 
                   // Reply to the message with quoting
@@ -85,12 +97,16 @@ async function startWhatsAppClient() {
                 // Change reaction to "error" if enabled
                 if (jid) {
                   if (REACTIONS_ENABLED) {
-                    await sock.sendMessage(jid, {
-                      react: {
-                        text: REACTIONS.ERROR,
-                        key: msg.key,
-                      },
-                    });
+                    try {
+                      await sock.sendMessage(jid, {
+                        react: {
+                          text: REACTIONS.ERROR,
+                          key: msg.key,
+                        },
+                      });
+                    } catch (reactionError) {
+                      console.error("Error sending error reaction:", reactionError);
+                    }
                   }
 
                   // Error reply also quotes the original message
